@@ -18,24 +18,68 @@ app.set('views', 'views')
 app.set('view engine', 'pug')
 app.use(express.urlencoded({ extended: false }))
 
+// When a get request is called, get all the tasks from the database and send it to index
 app.get('/', function (req, res) {
-    //TODO You will need to do a SQL select here
-    //TODO You will need to update the code below!
-    console.log('GET called')
-    res.render('index')
 
+    const local = { tasks: [] }
+    db.each('SELECT id, task FROM todo', function (err, row) {
+      if (err) {
+        console.log(err)
+      } else {
+        local.tasks.push({ id: row.id, task: row.task })
+      }
+    }, function (err, numrows) {
+      if (!err) {
+        res.render('index', local)
+      } else {
+        console.log(err)
+      }
+    })
+    console.log('GET called')
 })
 
+// When a post request is made, adds the todo item to the database and send the database to index
 app.post('/', function (req, res) {
     console.log('adding todo item')
-    //TODO You will need to to do a SQL Insert here
-
+    const stmt = db.prepare('INSERT INTO todo (task) VALUES (?)')
+    stmt.run(req.body.todo)
+    stmt.finalize()
+    const local = { tasks: [] }
+    db.each('SELECT id, task FROM todo', function (err, row) {
+      if (err) {
+        console.log(err)
+      } else {
+        local.tasks.push({ id: row.id, task: row.task })
+      }
+    }, function (err, numrows) {
+      if (!err) {
+        res.render('index', local)
+      } else {
+        console.log(err)
+      }
+    })
 })
 
+// When a delete request is made, deletes the todo item from the database and send the database to index
 app.post('/delete', function (req, res) {
     console.log('deleting todo item')
-    //TODO you will need to delete here
-
+    const stmt = db.prepare('DELETE FROM todo where id = (?)')
+    stmt.run(req.body.id)
+    stmt.finalize()
+    const local = { tasks: [] }
+    db.each('SELECT id, task FROM todo', function (err, row) {
+      if (err) {
+        console.log(err)
+      } else {
+        local.tasks.push({ id: row.id, task: row.task })
+      }
+    }, function (err, numrows) {
+      if (!err) {
+        res.render('index', local)
+      } else {
+        console.log(err)
+      }
+    })
 })
 
 // Start the web server
